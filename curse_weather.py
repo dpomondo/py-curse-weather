@@ -1,12 +1,14 @@
-import sys, requests
+import sys
+import requests
 import curses
 import time
 import basic_weather
+import random
 
 
 class CurseDisplay():
     """
-    An object to be called by curse.wrapper, displays lists of lines.
+    A gutless superclass, displays lists of lines.
 
     This object is the superclass of an object which will fetch, format and
     packages lists of lines. CurseDisplay will then loop through and display
@@ -33,6 +35,7 @@ class CurseDisplay():
         self.xmargin = min(10, int(self.maxx / 8))
         self.ymargin = min(10, int(self.maxy / 8))
 
+        # Here we make the pretty colors!
         curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
         curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
@@ -45,9 +48,9 @@ class CurseDisplay():
         curses.init_pair(10, curses.COLOR_BLACK, curses.COLOR_BLUE)
         curses.init_pair(11, curses.COLOR_BLACK, curses.COLOR_MAGENTA)
         curses.init_pair(12, curses.COLOR_BLACK, curses.COLOR_CYAN)
-        # curses.init_pair(13
-        # curses.init_pair(14
-        # curses.init_pair(15
+        curses.init_pair(13, curses.COLOR_RED, curses.COLOR_YELLOW)
+        curses.init_pair(14, curses.COLOR_CYAN, curses.COLOR_BLUE)
+        curses.init_pair(15, curses.COLOR_YELLOW, curses.COLOR_MAGENTA)
         # curses.init_pair(16
 
     def request_next(self):
@@ -71,33 +74,61 @@ class CurseDisplay():
             self.loop_flag = False
 
     def main_draw(self):
-        """
-        Where the magic happens
+        """ Where the magic happens
         """
         self.stdscr.clear()
         curses.curs_set(0)
+        self.stdscr.nodelay(1)  # loop properly, getkey is non-blocking
         self.prev_draw_time = time.time() - self.timer  # prime the draw func!
 
         while self.loop_flag:
-            # This loop is currently BUSTED and needs fixing
+            # Loop was busted because (a) .getch was blocking (i.e. waiting
+            # for input) and (b) .getch was INSIDE the time test so it was
+            # only responding every 30 seconds
             if time.time() > self.prev_draw_time + self.timer:
                 self.display_list = self.request_next()
-                if len(self.display_list) > (self.maxy -
-                                             2 * self.ymargin):
-                    self.display_list[:self.maxy - (2 * self.ymargin)]
                 c_index = 0
-                for index in range(len(self.display_list)):
+                for index in range(min(len(self.display_list),
+                                       self.maxy - (2 * self.ymargin))):
                     self.stdscr.addnstr(
                         self.ymargin + index,
                         self.xmargin,
                         self.display_list[index],
                         self.maxx - (2 * self.xmargin),
-                        curses.color_pair(c_index))
+                        curses.color_pair(random.randint(1, 15))
+                        )
                     c_index += 1
                 self.prev_draw_time = time.time()
                 self.stdscr.refresh()
-                key = self.stdscr.getkey()
-                self.parse_key(key)
+            # keep input out of the loop!
+            key = self.stdscr.getch()
+            if key is not -1:
+                self.parse_key(chr(key))
+
+
+class Texterizer(CurseDisplay):
+    """ Layer for returning fetched, formatted and packaged text.
+
+    Returns lists of text strings, merged with data stored in an object
+    that gets information from the internet. Primarily exists to overload
+    key functions in CurseDisplay, acts as a glue layer to allow differnt
+    behaviors without changing to info object or the display object.
+    """
+    def __init__(self, stdscr, timer=30, random_flag=False):
+        """ Creates a dictionary for storing text stuff, then calls
+        CurseDisplay __init__
+        """
+        self.screen_blanks = {}
+        CurseDisplay.__init__(self, stdscr, timer, random_flag)
+
+    def add_string(self):
+        pass
+
+    def request_next(self):
+        pass
+
+    def parse_key(self):
+        pass
 
 
 def main(stdscr):

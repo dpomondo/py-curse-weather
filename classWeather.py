@@ -4,14 +4,23 @@ import requests
 
 
 class WeatherGetter():
-    """ 
-    A class for getting weather data from the internet using
+    """
+    A general class for getting weather data from the internet using
     site-specific APIs.
     """
-    def __init__(self, name, url, params):
+    def __init__(self, name, url, api='', params={}, req_keys={}):
         self.name = name
         self.url = url
+        self.api = api
         self.params = params
+        if len(req_keys) > 0:
+            self.req_keys = req_keys
+        else:
+            self.req_keys = {'features': '',
+                             'settings': '',
+                             'query': '',
+                             'format': ''
+                             }
         # self.basic_terms is a dictionary containing WHAT can get pulled from
         # the .json data, with a route to that data. self.derived_terms is
         # a dictionary of terms which can be massaged from the raw .json
@@ -27,6 +36,31 @@ class WeatherGetter():
         self.verbose = False
         self.error = True
 
+    def make_url(self):
+        if not self.url.startswith('http://'):
+            res = "{}{}".format("http://", self.url)
+        else:
+            res = self.url
+        if self.req_keys.get('query', None):
+            if self.req_keys.get('settings', None):
+                res = "{}/api/{}/{}/{}/q/{}.{}".format(
+                    res,
+                    self.api,
+                    self.req_keys['features'],
+                    self.req_keys['settings'],
+                    self.req_keys['query'],
+                    self.req_keys['format']
+                )
+            else:
+                res = "{}/api/{}/{}/q/{}.{}".format(
+                    res,
+                    self.api,
+                    self.req_keys['features'],
+                    self.req_keys['query'],
+                    self.req_keys['format']
+                )
+        return res
+
     def get_response(self):
         """ Fill the self.current_response object with the .json returned
         from the website
@@ -36,7 +70,7 @@ class WeatherGetter():
                 if self.error:
                     print("re-query too soon.")
                 return
-        r = requests.get('http://' + self.url, params=self.params)
+        r = requests.get(self.make_url(), params=self.params)
         self.old_response = self.current_response
         self.last_query = time.time()
         if sys.version_info[1] < 4:
