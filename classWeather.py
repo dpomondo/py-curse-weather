@@ -117,7 +117,7 @@ class WeatherGetter():
             initial = func(initial)
         return initial
 
-    def set_derived_term(self, term, *funcs):
+    def set_derived_term(self, term, *args):
         """ adds to the self.derived_terms a term and its related functions.
 
         A call of the form:
@@ -133,7 +133,7 @@ class WeatherGetter():
             func_c(func_b(func_a('zzzz')))
 
         """
-        self.derived_terms[term] = list(funcs)
+        self.derived_terms[term] = list(args)
 
     def return_term(self, term):
         """ Returns the current value of term, as scrubbed and cleaned by
