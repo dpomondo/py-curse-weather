@@ -2,6 +2,7 @@
 import classWeather
 import curse_weather
 import curses
+import time
 
 
 class Wunderground(classWeather.WeatherGetter,
@@ -25,14 +26,30 @@ class Wunderground(classWeather.WeatherGetter,
         """
         res, color = [], []
         text = "Current temperature:"
-        res.append("{} {:>5}".format(
-            text, self.parse_term('temp_in_fahr')))
-        color.append("{}{}".format('1' * len(text), 'a' * 5))
+        res.append("{}{:>5}".format(
+            text, self.return_term('temp_in_fahr')))
+        # here we have the debugging line
+        # res.append("{}{:>5}".format(
+            # text, 'xxxxx'))
+        color.append("{}{}".format('0' * len(text), '4' * 5))
+        # temp = len(self.current_response)
+        res.append("Wind: {}".format(self.return_term('wind_string')))
+        color.append('0' * len(res[1]))
+        res.append("{}".format(time.asctime()))
+        color.append('0' * len(res[2]))
+        
+        # text = "There are "
+        # text1 = " items in the current_response attribute."
+        # res.append("{}{:>4}{}".format(text, temp, text1))
+        # color.append("{}{}{}".format('0' * len(text), '5' * 4,
+                                     # '0' * len(text1)))
         return res, color
 
     def request_next(self):
         """ Exists to get overloaded... again!
         """
+        # is this really the best place to put this?
+        self.get_response()
         if len(self.display_fuctions) == 0:
             self.display_fuctions.append(self.DISPLAY_temp)
         words, color_mask = self.display_fuctions[0]()
@@ -42,7 +59,7 @@ class Wunderground(classWeather.WeatherGetter,
 def make_instance(stdscr):
     url = 'api.wunderground.com'
     api = '32a3b46b738a7f0a'
-    features = 'conditions/hourly'
+    features = 'conditions/hourly/astronomy'
     query = '80521'
     format_ = 'json'
 
@@ -53,6 +70,7 @@ def make_instance(stdscr):
                           )
     # here we make the thing!
     wunder.set_new_term('temp_in_fahr', ['current_observation', 'temp_f'])
+    wunder.set_new_term('wind_string', ['current_observation', 'wind_string'])
     wunder.main_draw()
 
 

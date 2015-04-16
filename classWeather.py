@@ -66,7 +66,8 @@ class WeatherGetter():
         """ Fill the self.current_response object with the .json returned
         from the website
         """
-        print("Getting response from the server...")
+        if self.verbose:
+            print("Getting response from the server...")
         if self.time_out:
             if time.time() - self.last_query < self.time_out:
                 if self.error:
@@ -95,8 +96,9 @@ class WeatherGetter():
         self.basic_terms[term] = route
 
     def parse_term(self, term):
-        """ Generic function for pulling stuff from the response, as long
+        """ Helper function for pulling stuff from the response, as long
         as a route has been initialized
+        This should NOT be called, it is a helper for return_term
         """
         if term not in self.basic_terms.keys():
             return
@@ -153,8 +155,16 @@ class WeatherGetter():
             print("passing {} to convert function".format(nerds))
         if term in self.derived_terms.keys():
             return self.convert(*self.derived_terms[term])
-        else:
+        elif term in self.basic_terms.keys():
             return self.parse_term(term)
+        else:
+            if term in self.current_response.keys():
+                if isinstance(self.current_response[term], str):
+                    return self.current_response[term]
+                else:
+                    # THis should be a 'raise key error' but I ain't smart
+                    # enough to do that yet
+                    return
 
     def kelvin_to_celsius(self, temp):
         return temp - 273.15

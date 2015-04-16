@@ -12,5 +12,5 @@ owm = classWeather.WeatherGetter('openWeatherMap', url=owm_url,
 
 owm.set_time_out(600)
 owm.set_new_term('temp', ['main', 'temp'])
-owm.set_derived_term('fahr', 'temp', owm.parse_term, owm.kelvin_to_celsius,
-                     owm.celsius_to_fahr)
+owm.set_derived_term('temp_in_fahr', 'temp', owm.parse_term,
+                     owm.kelvin_to_celsius, owm.celsius_to_fahr)

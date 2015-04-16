@@ -96,6 +96,7 @@ class CurseDisplay():
             # only responding every 30 seconds
             if time.time() > self.prev_draw_time + self.timer:
                 self.display_list, self.color_mask = self.request_next()
+                self.stdscr.clear()
                 if not self.color_mask:
                     for y_index in range(min(len(self.display_list),
                                              self.maxy - (2 * self.ymargin))):
