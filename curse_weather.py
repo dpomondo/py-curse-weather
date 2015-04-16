@@ -21,6 +21,9 @@ class CurseDisplay():
         random_flag: passed to the coordinating object, sets whether the
         next item will be random in a sequence.
         """
+        self.verbose = verbose
+        # Debugging line
+        print("Initializing CurseDisplay instance...")
         self.stdscr = stdscr
         self.timer = timer
         self.prev_draw_time = 0    # will be initialized by the main_draw func
@@ -34,7 +37,6 @@ class CurseDisplay():
         self.xmargin = min(10, int(self.maxx / 8))
         self.ymargin = min(10, int(self.maxy / 8))
         # THe debugging flag:
-        self.verbose = verbose
 
         # Here we make the pretty colors!
         curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)

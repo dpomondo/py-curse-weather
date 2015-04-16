@@ -9,6 +9,8 @@ class WeatherGetter():
     site-specific APIs.
     """
     def __init__(self, name, url, api='', params={}, req_keys={}):
+        # Debugging line
+        print("Initializing WeatherGetter instance...")
         self.name = name
         self.url = url
         self.api = api
@@ -33,7 +35,6 @@ class WeatherGetter():
         self.last_query = 0
         self.time_out = False
         # here be the debugging flag!
-        self.verbose = False
         self.error = True
 
     def make_url(self):
@@ -65,6 +66,7 @@ class WeatherGetter():
         """ Fill the self.current_response object with the .json returned
         from the website
         """
+        print("Getting response from the server...")
         if self.time_out:
             if time.time() - self.last_query < self.time_out:
                 if self.error:
@@ -85,6 +87,10 @@ class WeatherGetter():
 
     def set_new_term(self, term, route):
         """ Generic function for adding new pullable items
+
+
+        'term' is just a dictionary key
+        'route' is a list of further keys used to parse a .json object
         """
         self.basic_terms[term] = route
 

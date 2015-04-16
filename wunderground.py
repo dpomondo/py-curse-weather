@@ -13,6 +13,7 @@ class Wunderground(classWeather.WeatherGetter,
         """ Creates a dictionary for storing text stuff, then calls
         CurseDisplay __init__
         """
+        print("Initializing WUnderground instance...")
         self.display_fuctions = []
         classWeather.WeatherGetter.__init__(self,
                                             name, url, api, params, req_keys)
@@ -25,7 +26,7 @@ class Wunderground(classWeather.WeatherGetter,
         res, color = [], []
         text = "Current temperature:"
         res.append("{} {:>5}".format(
-            text, self.current_response['current_response']['temp_f']))
+            text, self.parse_term('temp_in_fahr')))
         color.append("{}{}".format('1' * len(text), 'a' * 5))
         return res, color
 
@@ -50,8 +51,8 @@ def make_instance(stdscr):
                                     'query': query,
                                     'format': format_}
                           )
-
-
+    # here we make the thing!
+    wunder.set_new_term('temp_in_fahr', ['current_observation', 'temp_f'])
     wunder.main_draw()
 
 
