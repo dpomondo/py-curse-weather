@@ -37,7 +37,10 @@ class Wunderground(classWeather.WeatherGetter,
         color.append('0' * len(res[1]))
         res.append("{}".format(time.asctime()))
         color.append('0' * len(res[2]))
-        
+        res.append("")
+        color.append("")
+        res.append("{}".format(self.return_term('observation_time')))
+        color.append('0' * len(res[4]))
         # text = "There are "
         # text1 = " items in the current_response attribute."
         # res.append("{}{:>4}{}".format(text, temp, text1))
@@ -71,6 +74,8 @@ def make_instance(stdscr):
     # here we make the thing!
     wunder.set_new_term('temp_in_fahr', ['current_observation', 'temp_f'])
     wunder.set_new_term('wind_string', ['current_observation', 'wind_string'])
+    wunder.set_new_term('observation_time',
+                        ['current_observation', 'observation_time'])
     wunder.main_draw()
 
 
