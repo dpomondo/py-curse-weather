@@ -14,7 +14,8 @@ class Wunderground(classWeather.WeatherGetter,
         """ Creates a dictionary for storing text stuff, then calls
         CurseDisplay __init__
         """
-        print("Initializing WUnderground instance...")
+        if verbose:
+            print("Initializing WUnderground instance...")
         self.display_fuctions = []
         classWeather.WeatherGetter.__init__(self,
                                             name, url, api, params, req_keys)

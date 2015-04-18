@@ -60,21 +60,7 @@ class CurseDisplay():
         """
         This gets overloaded by the coordinating object, one subclass down.
         """
-        _res = []
-        _res.append("This is a test of the curse display function.")
-        _res.append("This screen is {} by {},".format(
-            self.maxx, self.maxy))
-        _res.append("The maximum viewing area is {} by {}.".format(
-            self.maxx - (2 * self.xmargin),
-            self.maxy - (2 * self.ymargin)))
-        _res.append("It is now {}.".format(time.asctime()))
-        _res.append("Does the window have colors? {}".format(
-            str(curses.has_colors())))
-        _res.append("Can the window change colors? {}".format(
-            str(curses.can_change_color())))
-        _res.append("The window has {} colors and {} color pairs".format(
-            str(curses.COLORS), str(curses.COLOR_PAIRS)))
-        return _res, []
+        raise NotImplementedError
 
     def parse_key(self, key):
         """ also exists to get overloaded
@@ -158,12 +144,23 @@ class Texterizer(CurseDisplay):
     def DISPLAY_basic(self):
         res = []
         res.append("This is a line of text.")
+        res.append("This is a test of the curse display function.")
+        res.append("This screen is {} by {},".format(
+            self.maxx, self.maxy))
+        res.append("The maximum viewing area is {} by {}.".format(
+            self.maxx - (2 * self.xmargin),
+            self.maxy - (2 * self.ymargin)))
+        res.append("It is now {}.".format(time.asctime()))
+        res.append("Does the window have colors? {}".format(
+            str(curses.has_colors())))
+        res.append("Can the window change colors? {}".format(
+            str(curses.can_change_color())))
+        res.append("The window has {} colors and {} color pairs".format(
+            str(curses.COLORS), str(curses.COLOR_PAIRS)))
         res.append("self.__dir__() has {} entries".format(len(
             self.__dir__())))
         res.append("")
-        res.append("The current time is {}".format(
-            time.asctime()))
-        return res
+        return res, []
 
     def color_randomizer(self, lines):
         """ test function for crazy colors
@@ -184,9 +181,9 @@ class Texterizer(CurseDisplay):
         # but not a list of CALLABLE functions, so the dream dies
         if len(self.display_fuctions) == 0:
             self.display_fuctions.append(self.DISPLAY_basic)
-        words = self.display_fuctions[0]()
+        words, colors = self.display_fuctions[0]()
         if self.random_flag is False:
-            return words, []
+            return words, colors
         else:
             return words, self.color_randomizer(words)
 
