@@ -69,17 +69,40 @@ class WeatherGetter():
         if self.verbose:
             print("Getting response from the server...")
         if self.time_out:
-            if time.time() - self.last_query < self.time_out:
+            if self.response_age() < self.time_out:
                 if self.error:
                     print("re-query too soon.")
                 return
         r = requests.get(self.make_url(), params=self.params)
         self.old_response = self.current_response
-        self.last_query = time.time()
+        self.last_query = int(time.time())
         if sys.version_info[1] < 4:
             self.current_response = r.json
         else:
             self.current_response = r.json()
+
+    def bad_connection(self):
+        """ Called when the connection fails
+        """
+        res, color = [], []
+        res.append("Connection lost...")
+        color.append("{}".format('0' * len(res[0])))
+        res.append("")
+        color.append("")
+        txt1, txt2 = "Current response is ", "seconds old"
+        tmp = self.response_age()
+        res.append("{}{:<5}{}".format(txt1, tmp, txt2))
+        color.append("{}{}{}".format(
+            '0' * len(txt1), '6' * 5, '0' * len(txt2)))
+        res.append("{} attempts made".format(self.bad_attempts))
+        color.append("{}{}".format('4' * len(str(self.bad_attempts)),
+                     '0' * (len(res[-1]) - len(str(self.bad_attempts)))))
+        return res, color
+
+    def response_age(self):
+        """ Called to see whenthe last call returned data
+        """
+        return int(time.time()) - self.last_query
 
     def set_time_out(self, time_in_seconds):
         """ Set the time between allowable calls to the server.
@@ -88,7 +111,6 @@ class WeatherGetter():
 
     def set_new_term(self, term, route):
         """ Generic function for adding new pullable items
-
 
         'term' is just a dictionary key
         'route' is a list of further keys used to parse a .json object
@@ -147,7 +169,6 @@ class WeatherGetter():
         """ Returns the current value of term, as scrubbed and cleaned by
         the sequence of functions found in self.derived_terms[term].
 
-
         """
         if self.verbose:
             print("Trying to return the value of {}".format(term))
@@ -164,7 +185,11 @@ class WeatherGetter():
                 else:
                     # THis should be a 'raise key error' but I ain't smart
                     # enough to do that yet
-                    return
+                    if term not in self.current_response.keys():
+                        raise KeyError("{} not in response keys".format(term))
+                    else:
+                        raise KeyError(
+                            "{} not part of a key:value pair".format(term))
 
     def kelvin_to_celsius(self, temp):
         return temp - 273.15

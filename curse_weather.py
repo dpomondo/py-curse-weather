@@ -25,7 +25,10 @@ class CurseDisplay():
         # Debugging line
         print("Initializing CurseDisplay instance...")
         self.stdscr = stdscr
+        # TODO: split timer into draw_time and request_time
         self.timer = timer
+        # self.draw_time = None
+        # self.request_time = None
         self.prev_draw_time = 0    # will be initialized by the main_draw func
         self.random_flag = random_flag
         self.display_list = []  # filled in by the request_next func
@@ -37,6 +40,7 @@ class CurseDisplay():
         self.xmargin = min(10, int(self.maxx / 8))
         self.ymargin = min(10, int(self.maxy / 8))
         # THe debugging flag:
+        self.bad_attempts = 0
 
         # Here we make the pretty colors!
         curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
@@ -62,6 +66,11 @@ class CurseDisplay():
         """
         raise NotImplementedError
 
+    def bad_connection(self):
+        """ THis gets overloaded
+        """
+        raise NotImplementedError
+
     def parse_key(self, key):
         """ also exists to get overloaded
         """
@@ -71,7 +80,6 @@ class CurseDisplay():
     def main_draw(self):
         """ Where the magic happens
         """
-        self.stdscr.clear()
         curses.curs_set(0)
         self.stdscr.nodelay(1)  # loop properly, getkey is non-blocking
         self.prev_draw_time = time.time() - self.timer  # prime the draw func!
@@ -81,49 +89,61 @@ class CurseDisplay():
             # for input) and (b) .getch was INSIDE the time test so it was
             # only responding every 30 seconds
             if time.time() > self.prev_draw_time + self.timer:
-                self.display_list, self.color_mask = self.request_next()
+                try:
+                    self.display_list, self.color_mask = self.request_next()
+                    self.bad_attempts = 0
+                except:
+                    self.bad_attempts += 1
+                    self.display_list, self.color_mask = self.bad_connection()
+                # clear, draw, refresh
                 self.stdscr.clear()
-                if not self.color_mask:
-                    for y_index in range(min(len(self.display_list),
-                                             self.maxy - (2 * self.ymargin))):
-                        self.stdscr.addnstr(
-                            self.ymargin + y_index,
-                            self.xmargin,
-                            self.display_list[y_index],
-                            self.maxx - (2 * self.xmargin),
-                            curses.color_pair(random.randint(0, 15))
-                            )
-                else:
-                    # Here we step through as many lines as will fit
-                    for y_index in range(min(len(self.display_list),
-                                             self.maxy - (2 * self.ymargin))):
-                        # Here we make sure the mask and the text line
-                        # are the same length
-                        diff = len(self.color_mask[y_index]) - len(
-                            self.display_list[y_index])
-                        if diff < 0:
-                            self.color_mask[y_index] += ('0' * abs(diff))
-                        # Now we begin to print letter by letter!
-                        for x_index in range(
-                            min(len(self.display_list[y_index]),
-                                self.maxx - (2 * self.xmargin))):
-                            # self.color_mask is sent as a list of text lines,
-                            # where each letter is a hexadecimal number
-                            # standing for a curses color pair
-                            self.stdscr.addstr(
-                                self.ymargin + y_index,
-                                self.xmargin + x_index,
-                                self.display_list[y_index][x_index],
-                                curses.color_pair(int(
-                                    self.color_mask[y_index][x_index], 16))
-                            )
-
-                self.prev_draw_time = time.time()
+                self.draw_loop()
                 self.stdscr.refresh()
             # keep input out of the loop!
             key = self.stdscr.getch()
             if key is not -1:
                 self.parse_key(chr(key))
+
+    def draw_loop(self):
+        """ Where the drawing happens!
+        """
+        if not self.color_mask:
+            for y_index in range(min(len(self.display_list),
+                                     self.maxy - (2 * self.ymargin))):
+                self.stdscr.addnstr(
+                    self.ymargin + y_index,
+                    self.xmargin,
+                    self.display_list[y_index],
+                    self.maxx - (2 * self.xmargin),
+                    curses.color_pair(random.randint(0, 15))
+                    )
+        else:
+            # Here we step through as many lines as will fit
+            for y_index in range(min(len(self.display_list),
+                                     self.maxy - (2 * self.ymargin))):
+                # Here we make sure the mask and the text line
+                # are the same length
+                diff = len(self.color_mask[y_index]) - len(
+                    self.display_list[y_index])
+                if diff < 0:
+                    self.color_mask[y_index] += ('0' * abs(diff))
+                # Now we begin to print letter by letter!
+                for x_index in range(
+                    min(len(self.display_list[y_index]),
+                        self.maxx - (2 * self.xmargin))):
+                    # self.color_mask is sent as a list of text lines,
+                    # where each letter is a hexadecimal number
+                    # standing for a curses color pair
+                    self.stdscr.addstr(
+                        self.ymargin + y_index,
+                        self.xmargin + x_index,
+                        self.display_list[y_index][x_index],
+                        curses.color_pair(int(
+                            self.color_mask[y_index][x_index], 16))
+                    )
+
+        self.prev_draw_time = int(time.time())
+        return
 
 
 class Texterizer(CurseDisplay):
@@ -186,6 +206,18 @@ class Texterizer(CurseDisplay):
             return words, colors
         else:
             return words, self.color_randomizer(words)
+
+    def bad_connection(self):
+        """ Called when the connection fails -- overloaded by subclass
+        """
+        raise NotImplementedError
+
+    def connection_age(self):
+        """ Called to see whenthe last call returned data
+
+        Exists to get overloaded
+        """
+        raise NotImplementedError
 
 
 def main(stdscr):

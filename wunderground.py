@@ -32,16 +32,22 @@ class Wunderground(classWeather.WeatherGetter,
         # here we have the debugging line
         # res.append("{}{:>5}".format(
             # text, 'xxxxx'))
-        color.append("{}{}".format('0' * len(text), '4' * 5))
+        color.append("{}{}".format('0' * len(text), '6' * 5))
         # temp = len(self.current_response)
         res.append("Wind: {}".format(self.return_term('wind_string')))
         color.append('0' * len(res[1]))
-        res.append("{}".format(time.asctime()))
+        res.append("Current time: {}".format(time.asctime()))
         color.append('0' * len(res[2]))
         res.append("")
         color.append("")
-        res.append("{}".format(self.return_term('observation_time')))
-        color.append('0' * len(res[4]))
+        res.append("{}".format(self.return_term['observation_time']))
+        color.append('0' * len(res[-1]))
+        txt1, txt2 = "Connection is ", "seconds old"
+        # tmp = self.response_age()
+        tmp = int(time.time()) - self.last_query
+        res.append("{}{:<5}{}".format(txt1, tmp, txt2))
+        color.append("{}{}{}".format(
+            '0' * len(txt1), '6' * 5, '0' * len(txt2)))
         # text = "There are "
         # text1 = " items in the current_response attribute."
         # res.append("{}{:>4}{}".format(text, temp, text1))
@@ -73,6 +79,7 @@ def make_instance(stdscr):
                                     'format': format_}
                           )
     # here we make the thing!
+    wunder.set_time_out = 300
     wunder.set_new_term('temp_in_fahr', ['current_observation', 'temp_f'])
     wunder.set_new_term('wind_string', ['current_observation', 'wind_string'])
     wunder.set_new_term('observation_time',
