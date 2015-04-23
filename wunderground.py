@@ -1,7 +1,6 @@
 # file: wunderground.py
 import classWeather
 import curse_weather
-import curses
 import time
 
 
@@ -9,18 +8,17 @@ class Wunderground(classWeather.WeatherGetter,
                    curse_weather.Texterizer):
     """ Here be the one what gets us done
     """
-    def __init__(self, name, url, stdscr, api='', params={}, req_keys={},
-                 timer=30, random_flag=False, verbose=False):
+    def __init__(self, name, url, api='', params={}, req_keys={},
+                 timer=1, random_flag=False, verbose=False):
         """ Creates a dictionary for storing text stuff, then calls
         CurseDisplay __init__
         """
         if verbose:
             print("Initializing WUnderground instance...")
         self.display_fuctions = []
-        classWeather.WeatherGetter.__init__(self,
-                                            name, url, api, params, req_keys)
-        curse_weather.Texterizer.__init__(self,
-                                          stdscr, timer, random_flag, verbose)
+        classWeather.WeatherGetter.__init__(self, name, url,
+                                            api, params, req_keys)
+        curse_weather.Texterizer.__init__(self, timer, random_flag, verbose)
 
     def DISPLAY_temp(self):
         """ Here be the first time we actually do some stuff from the internet!
@@ -40,14 +38,20 @@ class Wunderground(classWeather.WeatherGetter,
         color.append('0' * len(res[2]))
         res.append("")
         color.append("")
-        res.append("{}".format(self.return_term['observation_time']))
+        res.append("{}".format(self.return_term('observation_time')))
         color.append('0' * len(res[-1]))
+        txt1 = "Request time: "
+        tmp = time.asctime(time.localtime(self.last_query))
+        res.append("{}{}".format(txt1, tmp))
+        color.append("{}{}".format('0' * len(txt1), '4' * len(tmp)))
         txt1, txt2 = "Connection is ", "seconds old"
         # tmp = self.response_age()
         tmp = int(time.time()) - self.last_query
         res.append("{}{:<5}{}".format(txt1, tmp, txt2))
         color.append("{}{}{}".format(
             '0' * len(txt1), '6' * 5, '0' * len(txt2)))
+        res.append("time out length: {}".format(self.time_out))
+        color.append('2' * len(res[-1]))
         # text = "There are "
         # text1 = " items in the current_response attribute."
         # res.append("{}{:>4}{}".format(text, temp, text1))
@@ -66,26 +70,32 @@ class Wunderground(classWeather.WeatherGetter,
         return words, color_mask
 
 
-def make_instance(stdscr):
+def make_instance():
     url = 'api.wunderground.com'
     api = '32a3b46b738a7f0a'
     features = 'conditions/hourly/astronomy'
     query = '80521'
     format_ = 'json'
 
-    wunder = Wunderground('wunderground', url, stdscr, api=api,
+    wunder = Wunderground('wunderground', url, api=api,
                           req_keys={'features': features,
                                     'query': query,
                                     'format': format_}
                           )
     # here we make the thing!
-    wunder.set_time_out = 300
+    wunder.set_time_out(300)
     wunder.set_new_term('temp_in_fahr', ['current_observation', 'temp_f'])
     wunder.set_new_term('wind_string', ['current_observation', 'wind_string'])
     wunder.set_new_term('observation_time',
                         ['current_observation', 'observation_time'])
-    wunder.main_draw()
+    return wunder
 
 
 if __name__ == '__main__':
-    curses.wrapper(make_instance)
+    wunder = make_instance()
+    try:
+        wunder.init_sceen()
+        wunder.main_draw()
+    finally:
+        wunder.kill_screen()
+        wunder.end_program()

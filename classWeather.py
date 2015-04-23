@@ -76,6 +76,7 @@ class WeatherGetter():
         r = requests.get(self.make_url(), params=self.params)
         self.old_response = self.current_response
         self.last_query = int(time.time())
+        self.good_attempts += 1
         if sys.version_info[1] < 4:
             self.current_response = r.json
         else:
@@ -85,8 +86,10 @@ class WeatherGetter():
         """ Called when the connection fails
         """
         res, color = [], []
-        res.append("Connection lost...")
-        color.append("{}".format('0' * len(res[0])))
+        res.append("Exception raised: {}".format(self._except))
+        color.append("{}{}".format('0' *
+                                   (len(res[0]) - len(str(self._except))),
+                                   '3' * len(str(self._except))))
         res.append("")
         color.append("")
         txt1, txt2 = "Current response is ", "seconds old"

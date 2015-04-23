@@ -15,16 +15,16 @@ class CurseDisplay():
     will be displayed next, will be done by the next lower subclass.
     """
 
-    def __init__(self, stdscr, timer=30, random_flag=False, verbose=False):
+    def __init__(self, timer=1, random_flag=False, verbose=False):
         """
         timer: how often a request for a new display set is made.
         random_flag: passed to the coordinating object, sets whether the
         next item will be random in a sequence.
         """
+        self.init_sceen()
         self.verbose = verbose
         # Debugging line
         print("Initializing CurseDisplay instance...")
-        self.stdscr = stdscr
         # TODO: split timer into draw_time and request_time
         self.timer = timer
         # self.draw_time = None
@@ -40,7 +40,12 @@ class CurseDisplay():
         self.xmargin = min(10, int(self.maxx / 8))
         self.ymargin = min(10, int(self.maxy / 8))
         # THe debugging flag:
+        self.init_time = int(time.time())
         self.bad_attempts = 0
+        self.bad_attemps_total = 0
+        self.good_attempts = 0
+        self.screen_draws = 0
+        self._except = None
 
         # Here we make the pretty colors!
         curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
@@ -59,6 +64,23 @@ class CurseDisplay():
         curses.init_pair(14, curses.COLOR_CYAN, curses.COLOR_BLUE)
         curses.init_pair(15, curses.COLOR_YELLOW, curses.COLOR_MAGENTA)
         # curses.init_pair(16
+
+    def init_sceen(self):
+        """ Here we make the window
+        """
+        self.stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        self.stdscr.keypad(True)
+        curses.start_color()
+
+    def kill_screen(self):
+        """ Here we kill the screen
+        """
+        curses.nocbreak()
+        self.stdscr.keypad(False)
+        curses.echo()
+        curses.endwin()
 
     def request_next(self):
         """
@@ -82,7 +104,8 @@ class CurseDisplay():
         """
         curses.curs_set(0)
         self.stdscr.nodelay(1)  # loop properly, getkey is non-blocking
-        self.prev_draw_time = time.time() - self.timer  # prime the draw func!
+        # prime the draw func!
+        self.prev_draw_time = int(time.time()) - self.timer
 
         while self.loop_flag:
             # Loop was busted because (a) .getch was blocking (i.e. waiting
@@ -92,13 +115,17 @@ class CurseDisplay():
                 try:
                     self.display_list, self.color_mask = self.request_next()
                     self.bad_attempts = 0
-                except:
+                except Exception as var:
+                    self._except = var
                     self.bad_attempts += 1
+                    self.bad_attemps_total += 1
                     self.display_list, self.color_mask = self.bad_connection()
                 # clear, draw, refresh
-                self.stdscr.clear()
-                self.draw_loop()
-                self.stdscr.refresh()
+                finally:
+                    self.stdscr.clear()
+                    self.draw_loop()
+                    self.screen_draws += 1
+                    self.stdscr.refresh()
             # keep input out of the loop!
             key = self.stdscr.getch()
             if key is not -1:
@@ -145,6 +172,16 @@ class CurseDisplay():
         self.prev_draw_time = int(time.time())
         return
 
+    def end_program(self):
+        """ Quitting the program nicely gets a small tidbit of info
+        """
+        # after curses exits
+        print("Program ran for {} seconds.".format(
+            int(time.time()) - self.init_time))
+        print("{} good and {} bad requests were made.".format(
+            self.good_attempts, self.bad_attemps_total))
+        print("The screen was drawn {} times.".format(self.screen_draws))
+
 
 class Texterizer(CurseDisplay):
     """ Layer for returning fetched, formatted and packaged text.
@@ -154,12 +191,12 @@ class Texterizer(CurseDisplay):
     key functions in CurseDisplay, acts as a glue layer to allow differnt
     behaviors without changing to info object or the display object.
     """
-    def __init__(self, stdscr, timer=30, random_flag=False, verbose=False):
+    def __init__(self, timer=30, random_flag=False, verbose=False):
         """ Creates a dictionary for storing text stuff, then calls
         CurseDisplay __init__
         """
         self.display_fuctions = []
-        CurseDisplay.__init__(self, stdscr, timer, random_flag, verbose)
+        CurseDisplay.__init__(self, timer, random_flag, verbose)
 
     def DISPLAY_basic(self):
         res = []
