@@ -1,13 +1,14 @@
 # file: wunderground.py
 import classWeather
 import curse_weather
+import json
 import time
 
 
 class Wunderground(classWeather.WeatherGetter):
     """ Here be the one what gets us done
     """
-    def __init__(self, name, url, api='', params={},
+    def __init__(self, name, url='', api='', params={},
                  req_keys={}, verbose=False):
         """ Creates a dictionary for storing text stuff, then calls
         CurseDisplay __init__
@@ -67,32 +68,36 @@ class Wunderground_Curse(Wunderground, curse_weather.Texterizer):
         curse_weather.Texterizer.__init__(self, timer, random_flag)
 
 
-def make_instance():
-    url = 'api.wunderground.com'
-    api = '32a3b46b738a7f0a'
-    features = 'conditions/hourly/astronomy'
-    query = '80521'
-    format_ = 'json'
+def make_instance(verbose=False):
+    """ opens a json file and creates a Wunderground instance.
+
+    Takes an input file with the following format:
+        {   "api": "_____",
+            "req_keys": {
+                "features": "____/____",
+                "format": "json",
+                "query": "_____"
+            },
+            "url": "api.wunderground.com"
+        }
+    
+    """
+    with open('jwunderground.json', 'r') as infile:
+        temp = json.load(infile)
 
     if __name__ == '__main__':
-        wunder = Wunderground_Curse('wunderground', url, api=api, 
-                                    req_keys={'features': features, 
-                                              'query': query, 
-                                              'format': format_},
-                                    verbose=True)
+        wunder = Wunderground_Curse('wunderground', verbose=verbose, **temp)
     else:
-        wunder = Wunderground('wunderground', url, api=api, 
-                              req_keys={'features': features, 
-                                        'query': query, 
-                                        'format': format_}, 
-                              verbose=True)
-    # here we make the thing!
+        wunder = Wunderground('wunderground', verbose=verbose, **temp)
+
+    # Aw shucks, why not initialize the thing before we return it
     wunder.set_time_out(300)
     wunder.set_new_term('temp_in_fahr', ['current_observation', 'temp_f'])
     wunder.set_new_term('wind_string', ['current_observation', 'wind_string'])
     wunder.set_new_term('observation_time',
                         ['current_observation', 'observation_time'])
     wunder.get_response()
+    # And we send it off into the wild
     return wunder
 
 
