@@ -10,7 +10,8 @@ class WeatherGetter():
     """
     def __init__(self, name, url, api='', params={}, req_keys={}):
         # Debugging line
-        print("Initializing WeatherGetter instance...")
+        if self.verbose:
+            print("Initializing WeatherGetter instance...")
         self.name = name
         self.url = url
         self.api = api
@@ -36,6 +37,9 @@ class WeatherGetter():
         self.time_out = False
         # here be the debugging flag!
         self.error = True
+        self.bad_attempts = 0
+        self.bad_attemps_total = 0
+        self.good_attempts = 0
 
     def make_url(self):
         if not self.url.startswith('http://'):
@@ -175,8 +179,6 @@ class WeatherGetter():
         """
         if self.verbose:
             print("Trying to return the value of {}".format(term))
-            nerds = self.derived_terms[term]
-            print("passing {} to convert function".format(nerds))
         if term in self.derived_terms.keys():
             return self.convert(*self.derived_terms[term])
         elif term in self.basic_terms.keys():

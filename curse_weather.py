@@ -6,7 +6,7 @@ import random
 
 class CurseDisplay():
     """
-    A gutless superclass, displays lists of lines.
+    A gutless superclass, displays lists of lines using curses.
 
     This object is the superclass of an object which will fetch, format and
     packages lists of lines. CurseDisplay will then loop through and display
@@ -15,20 +15,20 @@ class CurseDisplay():
     will be displayed next, will be done by the next lower subclass.
     """
 
-    def __init__(self, timer=1, random_flag=False, verbose=False):
+    def __init__(self, timer=1, random_flag=False):
         """
         timer: how often a request for a new display set is made.
         random_flag: passed to the coordinating object, sets whether the
         next item will be random in a sequence.
         """
-        self.init_sceen()
-        self.verbose = verbose
         # Debugging line
-        print("Initializing CurseDisplay instance...")
-        # TODO: split timer into draw_time and request_time
-        self.timer = timer
-        # self.draw_time = None
-        # self.request_time = None
+        if self.verbose:
+            print("Initializing CurseDisplay instance...")
+        # make the window
+        self.stdscr = self.init_sceen()
+        # TODO: split timer into draw_time and request_timer
+        self.draw_timer = timer
+        # self.request_timer = None
         self.prev_draw_time = 0    # will be initialized by the main_draw func
         self.random_flag = random_flag
         self.display_list = []  # filled in by the request_next func
@@ -39,11 +39,7 @@ class CurseDisplay():
         self.maxy, self.maxx = self.stdscr.getmaxyx()
         self.xmargin = min(10, int(self.maxx / 8))
         self.ymargin = min(10, int(self.maxy / 8))
-        # THe debugging flag:
         self.init_time = int(time.time())
-        self.bad_attempts = 0
-        self.bad_attemps_total = 0
-        self.good_attempts = 0
         self.screen_draws = 0
         self._except = None
 
@@ -68,11 +64,12 @@ class CurseDisplay():
     def init_sceen(self):
         """ Here we make the window
         """
-        self.stdscr = curses.initscr()
+        z = curses.initscr()
         curses.noecho()
         curses.cbreak()
-        self.stdscr.keypad(True)
+        z.keypad(True)
         curses.start_color()
+        return z
 
     def kill_screen(self):
         """ Here we kill the screen
@@ -105,13 +102,13 @@ class CurseDisplay():
         curses.curs_set(0)
         self.stdscr.nodelay(1)  # loop properly, getkey is non-blocking
         # prime the draw func!
-        self.prev_draw_time = int(time.time()) - self.timer
+        self.prev_draw_time = int(time.time()) - self.draw_timer
 
         while self.loop_flag:
             # Loop was busted because (a) .getch was blocking (i.e. waiting
             # for input) and (b) .getch was INSIDE the time test so it was
             # only responding every 30 seconds
-            if time.time() > self.prev_draw_time + self.timer:
+            if time.time() > self.prev_draw_time + self.draw_timer:
                 try:
                     self.display_list, self.color_mask = self.request_next()
                     self.bad_attempts = 0
@@ -184,19 +181,20 @@ class CurseDisplay():
 
 
 class Texterizer(CurseDisplay):
-    """ Layer for returning fetched, formatted and packaged text.
+    """ Layer for returning fetched and formatted text to CurseDisplay.
 
-    Returns lists of text strings, merged with data stored in an object
-    that gets information from the internet. Primarily exists to overload
-    key functions in CurseDisplay, acts as a glue layer to allow differnt
-    behaviors without changing to info object or the display object.
+    Returns lists of text strings, merged with data stored in object(s)
+    that gets information from the internet. Acts as a glue layer to allow
+    differnt behaviors by adding various specific Getter instances that
+    do the actual interfacing with website APIs and packaging the results
+    in lists of text strings with the appropriate color masks.
     """
-    def __init__(self, timer=30, random_flag=False, verbose=False):
+    def __init__(self, timer=30, random_flag=False):
         """ Creates a dictionary for storing text stuff, then calls
         CurseDisplay __init__
         """
         self.display_fuctions = []
-        CurseDisplay.__init__(self, timer, random_flag, verbose)
+        CurseDisplay.__init__(self, timer, random_flag)
 
     def DISPLAY_basic(self):
         res = []
