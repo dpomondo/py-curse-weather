@@ -228,8 +228,19 @@ class Texterizer(CurseDisplay):
             res.append(sub_res)
         return res
 
+    def add_getter(self, getter):
+        """ Add a getter instance
+        """
+        raise NotImplementedError
+
     def request_next(self):
-        """ Exists to get overloaded... again!
+        """ Called to grab the next text for display.
+
+        TODO:
+        self.display_fuctions contains all the functions from all the Getters
+        which output formated lines of text. The self.random_flag determines
+        whether the functions are stepped through in order or whether they
+        are chosen randomly.
         """
         # Killed the following 'cos it seems like they cannot work;
         # it's possible to gather up the NAMES of functions from __dir__()
@@ -243,9 +254,24 @@ class Texterizer(CurseDisplay):
             return words, self.color_randomizer(words)
 
     def bad_connection(self):
-        """ Called when the connection fails -- overloaded by subclass
+        """ Called when the connection fails
         """
-        raise NotImplementedError
+        res, color = [], []
+        res.append("Exception raised: {}".format(self._except))
+        color.append("{}{}".format('0' *
+                                   (len(res[0]) - len(str(self._except))),
+                                   '3' * len(str(self._except))))
+        res.append("")
+        color.append("")
+        txt1, txt2 = "Current response is ", "seconds old"
+        tmp = self.response_age()
+        res.append("{}{:<5}{}".format(txt1, tmp, txt2))
+        color.append("{}{}{}".format(
+            '0' * len(txt1), '6' * 5, '0' * len(txt2)))
+        res.append("{} attempts made".format(self.bad_attempts))
+        color.append("{}{}".format('4' * len(str(self.bad_attempts)),
+                     '0' * (len(res[-1]) - len(str(self.bad_attempts)))))
+        return res, color
 
     def connection_age(self):
         """ Called to see whenthe last call returned data

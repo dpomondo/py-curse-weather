@@ -80,7 +80,7 @@ def make_instance(verbose=False):
             },
             "url": "api.wunderground.com"
         }
-    
+
     """
     with open('jwunderground.json', 'r') as infile:
         temp = json.load(infile)
@@ -91,12 +91,17 @@ def make_instance(verbose=False):
         wunder = Wunderground('wunderground', verbose=verbose, **temp)
 
     # Aw shucks, why not initialize the thing before we return it
-    wunder.set_time_out(300)
+    wunder.set_time_out(450)
     wunder.set_new_term('temp_in_fahr', ['current_observation', 'temp_f'])
     wunder.set_new_term('wind_string', ['current_observation', 'wind_string'])
     wunder.set_new_term('observation_time',
                         ['current_observation', 'observation_time'])
-    wunder.get_response()
+    try:
+        wunder.get_response()
+    except:
+        if __name__ == '__main__':
+            wunder.kill_screen()
+        raise
     # And we send it off into the wild
     return wunder
 

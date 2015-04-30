@@ -86,25 +86,6 @@ class WeatherGetter():
         else:
             self.current_response = r.json()
 
-    def bad_connection(self):
-        """ Called when the connection fails
-        """
-        res, color = [], []
-        res.append("Exception raised: {}".format(self._except))
-        color.append("{}{}".format('0' *
-                                   (len(res[0]) - len(str(self._except))),
-                                   '3' * len(str(self._except))))
-        res.append("")
-        color.append("")
-        txt1, txt2 = "Current response is ", "seconds old"
-        tmp = self.response_age()
-        res.append("{}{:<5}{}".format(txt1, tmp, txt2))
-        color.append("{}{}{}".format(
-            '0' * len(txt1), '6' * 5, '0' * len(txt2)))
-        res.append("{} attempts made".format(self.bad_attempts))
-        color.append("{}{}".format('4' * len(str(self.bad_attempts)),
-                     '0' * (len(res[-1]) - len(str(self.bad_attempts)))))
-        return res, color
 
     def response_age(self):
         """ Called to see whenthe last call returned data
